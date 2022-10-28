@@ -1,118 +1,93 @@
-
 <?php
+set_time_limit(9600);
+date_default_timezone_set('America/Sao_Paulo');
+$plugins = [];
 
-    // Todos os plugins    
+// $plugins['Eco Skills']['link'] = "https://github.com/Auxilor/EcoSkills/archive/refs/heads/master.zip";
+// $plugins['Eco Skills']['jars'] = "bin";
 
-    $plugins = array();
+// $plugins['Eco Reforges']['link'] = "https://github.com/Auxilor/Reforges/archive/refs/heads/master.zip";
+// $plugins['Eco Reforges']['jars'] = "bin";
 
-    $plugins['Eco Skills']['link'] = "https://github.com/Auxilor/EcoSkills/archive/refs/heads/master.zip";
-    $plugins['Eco Skills']['jars'] = "bin";
+// $plugins['Eco Talismans']['link'] = "https://github.com/Auxilor/Talismans/archive/refs/heads/master.zip";
+// $plugins['Eco Talismans']['jars'] = "bin";
 
-    $plugins['Eco Reforges']['link'] = "https://github.com/Auxilor/Reforges/archive/refs/heads/master.zip";
-    $plugins['Eco Reforges']['jars'] = "bin";
+// $plugins['Eco Bosses']['link'] = "https://github.com/Auxilor/EcoBosses/archive/refs/heads/master.zip";
+// $plugins['Eco Bosses']['jars'] = "bin";
 
-    $plugins['Eco Talismans']['link'] = "https://github.com/Auxilor/Talismans/archive/refs/heads/master.zip";
-    $plugins['Eco Talismans']['jars'] = "bin";
+// $plugins['Eco Weapons']['link'] = "https://github.com/Auxilor/EcoWeapons/archive/refs/heads/master.zip";
+// $plugins['Eco Weapons']['jars'] = "bin";
 
-    $plugins['Eco Bosses']['link'] = "https://github.com/Auxilor/EcoBosses/archive/refs/heads/master.zip";
-    $plugins['Eco Bosses']['jars'] = "bin";
+// $plugins['Eco Armor']['link'] = "https://github.com/Auxilor/EcoArmor/archive/refs/heads/master.zip";
+// $plugins['Eco Armor']['jars'] = "bin";
 
-    $plugins['Eco Weapons']['link'] = "https://github.com/Auxilor/EcoWeapons/archive/refs/heads/master.zip";
-    $plugins['Eco Weapons']['jars'] = "bin";
+// $plugins['Eco Items']['link'] = "https://github.com/Auxilor/EcoItems/archive/refs/heads/master.zip";
+// $plugins['Eco Items']['jars'] = "bin";
 
-    $plugins['Eco Armor']['link'] = "https://github.com/Auxilor/EcoArmor/archive/refs/heads/master.zip";
-    $plugins['Eco Armor']['jars'] = "bin";
+// $plugins['Eco Enchants']['link'] = "https://github.com/Auxilor/EcoEnchants/archive/refs/heads/master.zip";
+// $plugins['Eco Enchants']['jars'] = "bin";
 
-    $plugins['Eco Items']['link'] = "https://github.com/Auxilor/EcoItems/archive/refs/heads/master.zip";
-    $plugins['Eco Items']['jars'] = "bin";
+// $plugins['Eco Pets']['link'] = "https://github.com/Auxilor/EcoPets/archive/refs/heads/master.zip";
+// $plugins['Eco Pets']['jars'] = "bin";
 
-    $plugins['Eco Enchants']['link'] = "https://github.com/Auxilor/EcoEnchants/archive/refs/heads/master.zip";
-    $plugins['Eco Enchants']['jars'] = "bin";
+// $plugins['Eco Crates']['link'] = "https://github.com/Auxilor/EcoCrates/archive/refs/heads/master.zip";
+// $plugins['Eco Crates']['jars'] = "bin";
 
-    $plugins['Iris World Generator']['link'] = "https://github.com/VolmitSoftware/Iris/archive/refs/heads/master.zip";
-    $plugins['Iris World Generator']['jars'] = "build/libs";
+// $plugins['Iris World Generator']['link'] = "https://github.com/VolmitSoftware/Iris/archive/refs/heads/master.zip";
+// $plugins['Iris World Generator']['jars'] = "build/libs";
 
-    $plugins['Oraxen']['link'] = "https://github.com/oraxen/oraxen/archive/refs/heads/master.zip";
-    $plugins['Oraxen']['jars'] = "build/libs";
-
-
+$plugins['Iris World Generator']['link'] = "https://github.com/mcMMO-Dev/mcMMO/archive/refs/heads/master.zip";
+$plugins['Iris World Generator']['jars'] = "bin";
 
 
-    set_time_limit(9600);
+$folderName = date("d-m-Y H.i.s");
+if(!is_dir("./".$folderName)) mkdir("./".$folderName);
 
-    foreach ($plugins as $key => $value) {
+foreach ($plugins as $key => $value) {
+    if(is_dir("./engine")) delete_dir("./engine");
+    mkdir("./engine");
 
-        set_error_handler(
-            function ($severity, $message, $file, $line) {
-                throw new ErrorException($message, $severity, $severity, $file, $line);
-            }
-        );
+    file_put_contents("./engine/master.zip", file_get_contents($value['link']));
+    if(!is_writable("./engine/master.zip")){ echo "Arquivo de {$key} não encontrado!"; continue;}
 
-        try {
-            
-            $loc_jars = $value['jars'];
-            $value = $value['link'];
-            
-            if(is_dir(dirname(__FILE__)."/engine")){
-                delete_dir(dirname(__FILE__)."/engine");
-            }
-            mkdir(dirname(__FILE__)."/engine");
+    unzip_file("./engine/master.zip", "./engine");
 
-            file_put_contents(dirname(__FILE__)."/engine/master.zip", 
-                file_get_contents($value)
-            );
-            
-            unset($zip);
-            unset($res);
-            $zip = new ZipArchive;
-            $res = $zip->open(dirname(__FILE__).'/engine/master.zip');
-            if ($res === TRUE) {
-                $zip->extractTo(dirname(__FILE__)."/engine");
-                $zip->close();
+    $return = makeBuild(getFolders("./engine"));
+    exit();
+    if($return){
+        $finalFolder = "./".$folderName."/".$key;
+        mkdir($finalFolder);
+        $jarFolder = "./engine/".getFolders("./engine")."/".$value['jars'];
+        moveAll($jarFolder, $finalFolder);
 
-                $scanned_directory = array_diff(scandir(dirname(__FILE__)."/engine"), array('..', '.', 'master.zip'));
-                $folder_name = array_values($scanned_directory)[0];
-
-                chdir(dirname(__FILE__)."/engine/".$folder_name);
-                exec(".\gradlew shadowJar");
-                
-                if(count(glob(dirname(__FILE__)."/engine/".$folder_name."/".$loc_jars."/*.*")) > 1){
-
-                    mkdir(dirname(__FILE__)."/".$key);
-                    $src = dirname(__FILE__)."/engine/".$folder_name."/".$loc_jars;
-                    $dst = dirname(__FILE__)."/".$key;
-                    $files = glob($src."/*.*");
-                    foreach($files as $file){
-                        $file_to_go = str_replace($src,$dst,$file);
-                        copy($file, $file_to_go);
-                    }
-                    echo '<p style="background-color: rgba(52, 211, 153, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$key.' build success! </p>';
-
-                }else{
-
-                    $src = dirname(__FILE__)."/engine/".$folder_name."/".$loc_jars;
-                    $dst = dirname(__FILE__);
-                    $files = glob($src."/*.*");
-                    foreach($files as $file){
-                        $file_to_go = str_replace($src,$dst,$file);
-                        copy($file, $file_to_go);
-                    }
-                    echo '<p style="background-color: rgba(52, 211, 153, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$key.' build success! </p>';
-                }
-
-            } else {
-                echo '<p style="background-color: rgba(248, 113, 113, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$key.' build fail! <small>Unzip error</small> </p>';
-            }
-
-        } catch(Exception $e) {
-            echo '<p style="background-color: rgba(248, 113, 113, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$key.' build fail! <small>'.$e->getMessage().'</small></p>';
-        }
+        feedback($key, true);
+        error_log("\n\n>> {$key} -> build success!");
+    }else{
+        feedback($key, false);
+        error_log("\n\n>> {$key} -> build error!");
     }
 
-    if(is_dir(dirname(__FILE__)."/engine")){
-        delete_dir(dirname(__FILE__)."/engine");
-    }
+    if(is_dir("./engine")) delete_dir("./engine");
+}
 
+
+function unzip_file($file, $destination){
+    // create object
+    $zip = new ZipArchive() ;
+    // open archive
+    if ($zip->open($file) !== TRUE) {
+        return false;
+    }
+    // extract contents to destination directory
+    $zip->extractTo($destination);
+    // close archive
+    $zip->close();
+        return true;
+}
+
+function getFolders($dir){
+    return array_values(array_diff(scandir($dir), array('..', '.', 'master.zip')))[0];
+}
 
 function delete_dir($src) { 
     $dir = opendir($src);
@@ -128,5 +103,45 @@ function delete_dir($src) {
     } 
     closedir($dir); 
     rmdir($src);
+}
 
+function makeBuild($folder_name){
+    chdir("./engine/".$folder_name);
+    exec("(((set JAVA_HOME=C:\Program Files\Java\jdk-18.0.2) & set PATH=C:\Program Files\Java\jdk-18.0.2\bin) & gradlew shadowJar) & exit", $output, $code);
+    chdir("../../");
+    foreach ($output as $value) {
+        if(str_contains($value, "BUILD SUCCESSFUL")) return true;
+    }
+    echo "<pre>";
+    print_r($output);
+    echo "</pre>";
+    return false;
+}
+
+function moveAll($from, $to){
+    // Get array of all source files
+    $files = scandir($from);
+    // Identify directories
+    $source = "{$from}/";
+    $destination = "{$to}/";
+    // Cycle through all source files
+    foreach ($files as $file) {
+    if (in_array($file, array(".",".."))) continue;
+    // If we copied this successfully, mark it for deletion
+    if (copy($source.$file, $destination.$file)) {
+        $delete[] = $source.$file;
+    }
+    }
+    // Delete all successfully-copied files
+    foreach ($delete as $file) {
+    unlink($file);
+    }
+}
+
+function feedback($name, $type){
+    if($type){
+        echo '<p style="background-color: rgba(52, 211, 153, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$name.' build success! </p>';
+    }else{
+        echo '<p style="background-color: rgba(248, 113, 113, 1); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700;color: rgba(17, 24, 39, 1); text-align: center;padding: 1.25rem; font-family: monospace;"> '.$name.' build fail! <small>Erro na build</small></p>';
+    }
 }
